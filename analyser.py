@@ -39,7 +39,7 @@ class analyzer(object):
 
 	def start_msg(self):
 		print 'Parsing: "%s"' % self.name
-		print 'Got "%i" samples.' % self.l
+		print 'Got "%i" samples' % self.l
 		print 'Sample rate: "%i"' % self.sample_rate
 		print 'Length of wav-file: "%f" (seconds)' % (float(self.l) / int(self.sample_rate))
 
@@ -121,7 +121,9 @@ class analyzer(object):
 		self.x_pos = 0
 		self.y_pos = 0
 
+		self.counter = 0
 		while True:
+			self.counter += 1
 			cur_pos = pygame.mixer.music.get_pos()
 
 			self.visualize(self.sampled_audio[cur_pos][1])
@@ -174,26 +176,31 @@ class analyzer(object):
 		plt.show()
 		
 	def create_window(self):
-		self.screen = pygame.display.set_mode((1440, 900))
+		self.screen = pygame.display.set_mode((1440, 900), pygame.SRCALPHA)
 		self.screen.fill((0,0,0,0))
 
 	def draw_window(self, cur):
 		for event in pygame.event.get():
-			pass
+			if event.type == pygame.QUIT: sys.exit()
 		self.screen.fill((0,0,0,0))
+
+		# DRAW
 		for i in range(1,6):
 			pygame.draw.circle(self.screen, (self.mixer[0] % 255, self.mixer[1] % 255, self.mixer[2] % 255, 0), (720 + 10 * i + self.x_pos, 450 + self.y_pos), abs(cur) / 100)
+		# DRAW
+
 		pygame.display.update()
-		self.calc_window()
+		if self.counter % 5 == 0:
+			self.calc_window()
 
 	def calc_window(self):
 		bounds = 3
 		self.x_pos += random.randint(-bounds,bounds)
 		self.y_pos += random.randint(-bounds,bounds)
 
-		self.mixer[0] += random.randint(0,bounds)
-		self.mixer[1] += random.randint(0,bounds)
-		self.mixer[2] += random.randint(0,bounds)
+		self.mixer[0] += random.randint(-bounds,bounds+3)
+		self.mixer[1] += random.randint(-bounds,bounds+3)
+		self.mixer[2] += random.randint(-bounds,bounds+3)
 
 
 a = analyzer()
