@@ -10,10 +10,12 @@ import matplotlib.pyplot as plt
 import time, wave, pymedia.audio.sound as sound
 import pygame.mixer
 
-import os, sys, pickle
+import os, sys, random, pickle
 
 class analyzer(object):
 	def __init__(self):
+		pygame.init()
+
 		self.f = tkFileDialog.askopenfilename(initialdir="/home/kpj/Musik")
 		#self.f = "/home/kpj/Musik/Hydrogen/test1.wav"
 		#self.f = "/tmp/Cumfiesta - SexyGuy (DJ Solovey Electro remix)www.livingelectro.com.mp3.wav"
@@ -111,26 +113,26 @@ class analyzer(object):
 #		plt.show()
 
 	def play_file(self, song):
-		pygame.init()
 		pygame.mixer.music.load(self.f)
 		pygame.mixer.music.play()
 
-		i = 0
-		old = 1
+		self.create_window()
+		self.mixer = [random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)]
+		self.x_pos = 0
+		self.y_pos = 0
+
 		while True:
 			cur_pos = pygame.mixer.music.get_pos()
 
 			self.visualize(self.sampled_audio[cur_pos][1])
+			self.draw_window(self.sampled_audio[cur_pos][1])
 
 			time.sleep(0.01)
-			i+=1
-			if old == 0 and cur_pos == 0:
-				break
-			old = cur_pos
 
 	def visualize(self, cur):
 		l = int(cur / 1000)
-		print "|" * l + "\r" * l +""
+		sys.stdout.write( " " + "|" * l + " " * 40 + "\r" * (l+40))
+		sys.stdout.flush()
 
 	def set_exists(self):
 		if self.name + self.sample_file_ending in os.listdir(self.save_dir):
@@ -171,6 +173,28 @@ class analyzer(object):
 		plt.title(self.name)
 		plt.show()
 		
+	def create_window(self):
+		self.screen = pygame.display.set_mode((1440, 900))
+		self.screen.fill((0,0,0,0))
+
+	def draw_window(self, cur):
+		for event in pygame.event.get():
+			pass
+		self.screen.fill((0,0,0,0))
+		for i in range(1,6):
+			pygame.draw.circle(self.screen, (self.mixer[0] % 255, self.mixer[1] % 255, self.mixer[2] % 255, 0), (720 + 10 * i + self.x_pos, 450 + self.y_pos), abs(cur) / 100)
+		pygame.display.update()
+		self.calc_window()
+
+	def calc_window(self):
+		bounds = 3
+		self.x_pos += random.randint(-bounds,bounds)
+		self.y_pos += random.randint(-bounds,bounds)
+
+		self.mixer[0] += random.randint(0,bounds)
+		self.mixer[1] += random.randint(0,bounds)
+		self.mixer[2] += random.randint(0,bounds)
+
 
 a = analyzer()
 #a.show_ampl()
