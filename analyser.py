@@ -118,11 +118,10 @@ class analyzer(object):
 		pygame.mixer.music.play()
 
 		self.create_window()
-		self.mixer = [random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)]
-		self.x_pos = 0
-		self.y_pos = 0
+		self.circle_num = 100
 
-		self.counter = 0
+		self.gen_window_vars()
+
 		while True:
 			self.counter += 1
 			cur_pos = pygame.mixer.music.get_pos()
@@ -131,6 +130,18 @@ class analyzer(object):
 			self.draw_window(self.sampled_audio[cur_pos][1])
 
 			time.sleep(0.01)
+
+	def gen_window_vars(self):
+		self.mixer = []
+		self.coords = []
+		self.diff_size = []
+		for i in range(self.circle_num):
+			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
+			self.coords.append((random.randint(0,1440), random.randint(0,900)))
+			self.diff_size.append(random.randint(1,30))
+
+		self.sizer = 1
+		self.counter = 0
 
 	def visualize(self, cur):
 		l = int(cur / 1000)
@@ -181,13 +192,17 @@ class analyzer(object):
 		self.screen.fill((0,0,0,0))
 
 	def draw_window(self, cur):
+		self.sizer += abs(cur)
+		self.sizer *= 0.8
+		if self.sizer <= 0: self.sizer = 0
+
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT: sys.exit()
 		self.screen.fill((0,0,0,0))
 
 		# DRAW
-		for i in range(1,6):
-			self.draw_figure(720 + 10 * i + self.x_pos, 450 + self.y_pos, abs(cur) / 100, (self.mixer[0] % 255, self.mixer[1] % 255, self.mixer[2] % 255, 0), "circle_filled")
+		for i in range(self.circle_num):
+			self.draw_figure(self.coords[i], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), "circle_filled")
 		# DRAW
 
 		pygame.display.update()
@@ -195,17 +210,17 @@ class analyzer(object):
 			self.calc_window()
 
 	def calc_window(self):
-		bounds = 3
-		self.x_pos += random.randint(-bounds,bounds)
-		self.y_pos += random.randint(-bounds,bounds)
+		bounds = 1
+		for i in range(self.circle_num):
+			self.coords[i] = (self.coords[i][0] + random.randint(-bounds,bounds), self.coords[i][1] + random.randint(-bounds,bounds))
 
-		self.mixer[0] += random.randint(-bounds,bounds+3)
-		self.mixer[1] += random.randint(-bounds,bounds+3)
-		self.mixer[2] += random.randint(-bounds,bounds+3)
+			self.mixer[i][0] += random.randint(-bounds,bounds+3)
+			self.mixer[i][1] += random.randint(-bounds,bounds+3)
+			self.mixer[i][2] += random.randint(-bounds,bounds+3)
 
-	def draw_figure(self, x, y, size, col, art):
+	def draw_figure(self, xy, size, col, art):
 		if art == "circle_filled":
-			pygame.draw.circle(self.screen, col, (x, y), size)
+			pygame.draw.circle(self.screen, col, xy, size)
 
 
 a = analyzer()
