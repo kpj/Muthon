@@ -113,7 +113,8 @@ class analyzer(object):
 #		plt.show()
 
 	def play_file(self, song):
-		pygame.mixer.music.load(self.f)
+		sd = open(self.f, "rb")
+		pygame.mixer.music.load(sd)
 		pygame.mixer.music.play()
 
 		self.create_window()
@@ -176,7 +177,7 @@ class analyzer(object):
 		plt.show()
 		
 	def create_window(self):
-		self.screen = pygame.display.set_mode((1440, 900), pygame.SRCALPHA)
+		self.screen = pygame.display.set_mode((1440, 900), pygame.DOUBLEBUF|pygame.HWSURFACE)
 		self.screen.fill((0,0,0,0))
 
 	def draw_window(self, cur):
@@ -186,7 +187,7 @@ class analyzer(object):
 
 		# DRAW
 		for i in range(1,6):
-			pygame.draw.circle(self.screen, (self.mixer[0] % 255, self.mixer[1] % 255, self.mixer[2] % 255, 0), (720 + 10 * i + self.x_pos, 450 + self.y_pos), abs(cur) / 100)
+			self.draw_figure(720 + 10 * i + self.x_pos, 450 + self.y_pos, abs(cur) / 100, (self.mixer[0] % 255, self.mixer[1] % 255, self.mixer[2] % 255, 0), "circle_filled")
 		# DRAW
 
 		pygame.display.update()
@@ -201,6 +202,10 @@ class analyzer(object):
 		self.mixer[0] += random.randint(-bounds,bounds+3)
 		self.mixer[1] += random.randint(-bounds,bounds+3)
 		self.mixer[2] += random.randint(-bounds,bounds+3)
+
+	def draw_figure(self, x, y, size, col, art):
+		if art == "circle_filled":
+			pygame.draw.circle(self.screen, col, (x, y), size)
 
 
 a = analyzer()
