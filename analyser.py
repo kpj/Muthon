@@ -118,7 +118,7 @@ class analyzer(object):
 		pygame.mixer.music.play()
 
 		self.create_window()
-		self.circle_num = 100
+		self.circle_num = random.randint(40,60)
 
 		self.gen_window_vars()
 
@@ -134,11 +134,13 @@ class analyzer(object):
 	def gen_window_vars(self):
 		self.mixer = []
 		self.coords = []
+		self.velo = []
 		self.diff_size = []
 		for i in range(self.circle_num):
 			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
-			self.coords.append((random.randint(0,1440), random.randint(0,900)))
-			self.diff_size.append(random.randint(1,30))
+			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
+			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
+			self.diff_size.append(random.randint(1,15))
 
 		self.sizer = 1
 		self.counter = 0
@@ -188,7 +190,8 @@ class analyzer(object):
 		plt.show()
 		
 	def create_window(self):
-		self.screen = pygame.display.set_mode((1440, 900), pygame.DOUBLEBUF|pygame.HWSURFACE)
+		self.screen_bound = (1440, 900)
+		self.screen = pygame.display.set_mode(self.screen_bound, pygame.DOUBLEBUF|pygame.HWSURFACE)
 		self.screen.fill((0,0,0,0))
 
 	def draw_window(self, cur):
@@ -202,25 +205,41 @@ class analyzer(object):
 
 		# DRAW
 		for i in range(self.circle_num):
-			self.draw_figure(self.coords[i], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), "circle_filled")
+			self.draw_figure(self.coords[i][0], self.coords[i][1], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), "circle_filled")
 		# DRAW
 
 		pygame.display.update()
+		self.check_borders()
 		if self.counter % 5 == 0:
 			self.calc_window()
+
+	def check_borders(self):
+		for i in range(self.circle_num):
+			if self.coords[i][0] < 0:
+				self.coords[i] = (self.screen_bound[0], self.coords[i][1])
+			if self.coords[i][1] < 0:
+				self.coords[i] = (self.coords[i][0], self.screen_bound[1])
+			if self.coords[i][0] > self.screen_bound[0]:
+				self.coords[i] = (0, self.coords[i][1])
+			if self.coords[i][1] > self.screen_bound[1]:
+				self.coords[i] = (self.coords[i][0], 0)
 
 	def calc_window(self):
 		bounds = 1
 		for i in range(self.circle_num):
-			self.coords[i] = (self.coords[i][0] + random.randint(-bounds,bounds), self.coords[i][1] + random.randint(-bounds,bounds))
+			self.coords[i] = (self.coords[i][0] + self.velo[i][0], self.coords[i][1] + self.velo[i][1])
 
 			self.mixer[i][0] += random.randint(-bounds,bounds+3)
 			self.mixer[i][1] += random.randint(-bounds,bounds+3)
 			self.mixer[i][2] += random.randint(-bounds,bounds+3)
 
-	def draw_figure(self, xy, size, col, art):
+	def draw_figure(self, x, y, size, col, art):
 		if art == "circle_filled":
-			pygame.draw.circle(self.screen, col, xy, size)
+			pygame.draw.circle(self.screen, col, (x,y), size)
+		elif art == "star_filled":
+			pygame.draw.polygon(self.screen, col, [(x, y - size), (x + size/4, y - size/2), (x + size/3, y - size/2), (x + size/2, y), (x + size/3, y + size/2), (x + size/4, y +size/2), (x, y + size)])
+		elif art == "ellipse_filled":
+			pygame.draw.ellipse(self.screen, col, pygame.Rect((x,y),(x+size/4,y+size/8)))
 
 
 a = analyzer()
