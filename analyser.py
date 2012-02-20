@@ -140,7 +140,7 @@ class analyzer(object):
 			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
 			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
 			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
-			self.diff_size.append(random.randint(1,15))
+			self.diff_size.append(random.randint(1,12))
 
 		self.sizer = 1
 		self.counter = 0
@@ -194,13 +194,24 @@ class analyzer(object):
 		self.screen = pygame.display.set_mode(self.screen_bound, pygame.DOUBLEBUF|pygame.HWSURFACE)
 		self.screen.fill((0,0,0,0))
 
+		pygame.mixer.music.set_volume(0.5)
+
 	def draw_window(self, cur):
 		self.sizer += abs(cur)
 		self.sizer *= 0.8
 		if self.sizer <= 0: self.sizer = 0
 
 		for event in pygame.event.get():
-			if event.type == pygame.QUIT: sys.exit()
+			if event.type == pygame.QUIT:
+				sys.exit()
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_SPACE:
+					self.pausing()
+				elif event.key == pygame.K_0:
+					self.change_volume(0.1)
+				elif event.key == pygame.K_9:
+					self.change_volume(-0.1)
+
 		self.screen.fill((0,0,0,0))
 
 		# DRAW
@@ -212,6 +223,12 @@ class analyzer(object):
 		self.check_borders()
 		if self.counter % 5 == 0:
 			self.calc_window()
+
+	def change_volume(self, val):
+		pygame.mixer.music.set_volume(pygame.mixer.music.get_volume() + val)
+
+	def pausing(self):
+		pygame.mixer.music.stop()
 
 	def check_borders(self):
 		for i in range(self.circle_num):
