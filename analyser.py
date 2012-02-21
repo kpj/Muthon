@@ -71,9 +71,10 @@ class analyzer(object):
 			prev = ""
 			for i, s in enumerate(self.audio):
 				if i % 50000 == 0:
+					preverer = "[%s / %s]" % ('{:,}'.format(i/self.sample_rate), '{:,}'.format(self.l/self.sample_rate))
 					prever = "[%s / %s]" % ('{:,}'.format(i), '{:,}'.format(self.l))
 					prev = self.gen_bar(i, self.l, 30)
-					outer = prev + " " + prever
+					outer = prev + " " + prever + " " + preverer
 					print outer + "\r" * len(outer) +" ",
 
 				# CALC
@@ -140,7 +141,7 @@ class analyzer(object):
 			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
 			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
 			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
-			self.diff_size.append(random.randint(1,12))
+			self.diff_size.append(random.randint(1,9))
 
 		self.sizer = 1
 		self.counter = 0
