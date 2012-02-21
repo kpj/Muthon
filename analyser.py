@@ -61,24 +61,35 @@ class analyzer(object):
 			os.mkdir(self.save_dir)
 			return False
 
+	def live_proc(self):
+		self.start_msg()
+		self.play_file(self.f)
+
 	def proc_ampl(self):
 		self.start_msg()
 		if not self.set_exists():
 			print "Generating new file..."
 			self.sampled_audio = []
 			tmp = []
-			prever = ""
-			prev = ""
+			p_time = ""
+			p_samples = ""
+			p_bar = ""
 			for i, s in enumerate(self.audio):
 				if i % 50000 == 0:
-					preverer = "[%s / %s]" % ('{:,}'.format(i/self.sample_rate), '{:,}'.format(self.l/self.sample_rate))
-					prever = "[%s / %s]" % ('{:,}'.format(i), '{:,}'.format(self.l))
-					prev = self.gen_bar(i, self.l, 30)
-					outer = prev + " " + prever + " " + preverer
+					t_now = list(str(i/self.sample_rate / 60 * 100 + (self.l/self.sample_rate) % 60))
+					t_now.insert(-2, ":")
+					t_now = "".join(t_now)
+					t_all = list(str(self.l/self.sample_rate / 60 * 100 + (self.l/self.sample_rate) % 60))
+					t_all.insert(-2, ":")
+					t_all = "".join(t_all)
+					p_time = "[%s / %s]" % (t_now, t_all)
+					p_samples = "[%s / %s]" % ('{:,}'.format(i), '{:,}'.format(self.l))
+					p_bat = self.gen_bar(i, self.l, 30)
+					outer = p_bar + " " + p_samples + " " + p_time
 					print outer + "\r" * len(outer) +" ",
 
 				# CALC
-				if i % (self.sample_rate / self.accuracy) != 0:
+				if (i) % (self.sample_rate / self.accuracy) != 0:
 					tmp.append(s[1])
 				else:
 					l = 0
@@ -95,7 +106,7 @@ class analyzer(object):
 			fd = open(os.path.join(self.save_dir, self.name + self.sample_file_ending), "wb")
 			pickle.dump(self.sampled_audio, fd)
 			fd.close()
-			print prev
+			print outer
 		else:
 			print "Just using old file..."
 			fd = open(os.path.join(self.save_dir, self.name + self.sample_file_ending), "rb")
@@ -127,8 +138,10 @@ class analyzer(object):
 			self.counter += 1
 			cur_pos = pygame.mixer.music.get_pos()
 
-			self.visualize(self.sampled_audio[cur_pos][1])
-			self.draw_window(self.sampled_audio[cur_pos][1])
+#			self.visualize(self.sampled_audio[cur_pos][1])
+#			self.draw_window(self.sampled_audio[cur_pos][1])
+
+			self.draw_window(self.audio[ int(cur_pos * 44.1)][0])
 
 			time.sleep(0.01)
 
@@ -261,7 +274,5 @@ class analyzer(object):
 
 
 a = analyzer()
-#a.show_ampl()
-a.proc_ampl()
-
-#a.show_freq()
+#a.proc_ampl()
+a.live_proc()
