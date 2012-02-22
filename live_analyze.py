@@ -66,7 +66,10 @@ class analyzer(object):
 		al = 0
 		r = range(-int(self.sample_rate / 1000 / 2) + cur_sample, int(self.sample_rate / 1000 / 2) + cur_sample)
 		for p in r:
-			al += self.audio[p][0]
+			try:
+				al += self.audio[p][0]
+			except IndexError:
+				pass
 		return float(al) / len(r)
 
 	def gen_window_vars(self):
