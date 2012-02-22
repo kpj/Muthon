@@ -2,10 +2,6 @@ import tkFileDialog
 
 import scipy
 from scipy.io.wavfile import read
-from scipy.signal import hann
-from scipy.fftpack import rfft
-
-import matplotlib.pyplot as plt
 
 import time, wave, pymedia.audio.sound as sound
 import pygame.mixer
@@ -21,14 +17,6 @@ class analyzer(object):
 		self.name = self.f.split(u"/")[-1]
 		
 		self.f = self.check_wav(self.f)
-
-		self.accuracy = 1000 # Get average of every 'sampleRate / x' samples // outputSamples = accuracy * seconds
-		self.save_dir = u"saves"
-
-		self.sample_file_ending = u"[%i].sample" % self.accuracy
-
-		if not self.check_save_dir():
-			print 'No saves directory found, created one in "%s"' % self.save_dir
 
 		self.sample_rate, inp = read(self.f)
 		self.audio = inp
@@ -51,72 +39,9 @@ class analyzer(object):
 			return output
 		return fi
 	
-	def check_save_dir(self):
-		try:
-			os.listdir(self.save_dir)
-			return True
-		except OSError:
-			os.mkdir(self.save_dir)
-			return False
-
-	def proc_ampl(self):
+	def live_proc(self):
 		self.start_msg()
-		if not self.set_exists():
-			print "Generating new file..."
-			self.sampled_audio = []
-			tmp = []
-			p_time = ""
-			p_samples = ""
-			p_bar = ""
-			for i, s in enumerate(self.audio):
-				if i % 50000 == 0:
-					t_now = list(str(i/self.sample_rate / 60 * 100 + (self.l/self.sample_rate) % 60))
-					t_now.insert(-2, ":")
-					t_now = "".join(t_now)
-					t_all = list(str(self.l/self.sample_rate / 60 * 100 + (self.l/self.sample_rate) % 60))
-					t_all.insert(-2, ":")
-					t_all = "".join(t_all)
-					p_time = "[%s / %s]" % (t_now, t_all)
-					p_samples = "[%s / %s]" % ('{:,}'.format(i), '{:,}'.format(self.l))
-					p_bat = self.gen_bar(i, self.l, 30)
-					outer = p_bar + " " + p_samples + " " + p_time
-					print outer + "\r" * len(outer) +" ",
-
-				# CALC
-				if (i) % (self.sample_rate / self.accuracy) != 0:
-					tmp.append(s[1])
-				else:
-					l = 0
-					for a in tmp:
-						l += abs(a)
-					if len(tmp) != 0:
-						self.sampled_audio.append((( float(i) / self.sample_rate ), l / len(tmp)))
-						del tmp[:]
-					else:
-						self.sampled_audio.append((( float(i) / self.sample_rate ), abs(s[1])))
-# --> self.sampled_time.append(i / self.sample_rate)
-
-				# CALC
-			fd = open(os.path.join(self.save_dir, self.name + self.sample_file_ending), "wb")
-			pickle.dump(self.sampled_audio, fd)
-			fd.close()
-			print outer
-		else:
-			print "Just using old file..."
-			fd = open(os.path.join(self.save_dir, self.name + self.sample_file_ending), "rb")
-			self.sampled_audio = pickle.load(fd)
-			fd.close()
-
-		# Can I haz milliseconds?
-#		for audit in range(len(self.sampled_audio)):
-#			self.sampled_audio[audit] = (self.sampled_audio[audit][0] * 1000, self.sampled_audio[audit][1])
-
 		self.play_file(self.f)
-#		plt.plot(self.sampled_audio)
-#		plt.xlabel("Time")
-#		plt.ylabel("Amplitude")
-#		plt.title(self.name)
-#		plt.show()
 
 	def play_file(self, song):
 		sd = open(self.f, "rb")
@@ -132,10 +57,17 @@ class analyzer(object):
 			self.counter += 1
 			cur_pos = pygame.mixer.music.get_pos()
 
-			self.visualize(self.sampled_audio[cur_pos][1])
-			self.draw_window(self.sampled_audio[cur_pos][1])
+			self.draw_window(self.get_average(cur_pos))
 
 			time.sleep(0.01)
+
+	def get_average(self, pos):
+		cur_sample = int(pos * self.sample_rate / 1000)
+		al = 0
+		r = range(-int(self.sample_rate / 1000 / 2) + cur_sample, int(self.sample_rate / 1000 / 2) + cur_sample)
+		for p in r:
+			al += self.audio[p][0]
+		return float(al) / len(r)
 
 	def gen_window_vars(self):
 		self.mixer = []
@@ -151,50 +83,6 @@ class analyzer(object):
 		self.sizer = 1
 		self.counter = 0
 
-	def visualize(self, cur):
-		l = int(cur / 1000)
-		sys.stdout.write( " " + "|" * l + " " * 40 + "\r" * (l+40))
-		sys.stdout.flush()
-
-	def set_exists(self):
-		if self.name + self.sample_file_ending in os.listdir(self.save_dir):
-			return True
-		return False
-
-	def gen_bar(self, current, maximum, length = 10):
-		current = float(current)
-		maximum = float(maximum)
-		length = float(length)
-		perc = ( 100 / maximum ) * current
-		if perc < 100:
-			tile = length * ( perc / 100 )
-			no = length - tile
-		else:
-			tile = length
-			no = 0
-		return "[" + "#" * int(tile) + "-" * int(no) + "]"
-
-	def show_ampl(self):
-		plt.plot([s for i,s in enumerate(self.audio) if i % self.sample_rate == 0])
-		plt.xlabel("Time")
-		plt.ylabel("Amplitude")
-		plt.title(self.name)
-		plt.show()
-
-	def show_freq(self):
-		inp = read(self.f)
-		audio = inp[1]
-		w = hann(self.ls)
-		audio = self.audio[0:self.ls] #* w
-		mags = abs(rfft(audio))
-		#mags = 20 * scipy.log10(mags)
-		#mags -= max(mags)
-		plt.plot(mags)
-		plt.ylabel("Magnitude")
-		plt.xlabel("Frequency")
-		plt.title(self.name)
-		plt.show()
-		
 	def create_window(self):
 		self.screen_bound = (1440, 900)
 		self.screen = pygame.display.set_mode(self.screen_bound, pygame.DOUBLEBUF|pygame.HWSURFACE)
@@ -265,5 +153,4 @@ class analyzer(object):
 			pygame.draw.ellipse(self.screen, col, pygame.Rect((x,y),(x+size/4,y+size/8)))
 
 
-a = analyzer()
-a.proc_ampl()
+analyzer().live_proc()
