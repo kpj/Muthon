@@ -64,7 +64,7 @@ class analyzer(object):
 	def get_average(self, pos):
 		cur_sample = int(pos * self.sample_rate / 1000)
 		al = 0
-		r = range(-int(self.sample_rate / 1000 / 2) + cur_sample, int(self.sample_rate / 1000 / 2) + cur_sample)
+		r = range(-int(self.sample_rate / 1000) + cur_sample, cur_sample)
 		for p in r:
 			try:
 				al += self.audio[p][0]
@@ -94,7 +94,7 @@ class analyzer(object):
 		pygame.mixer.music.set_volume(0.5)
 
 	def draw_window(self, cur):
-		self.sizer += abs(cur)
+		self.sizer += abs(cur) * 0.9999**(self.sizer)
 		self.sizer *= 0.8
 		if self.sizer <= 0: self.sizer = 0
 
