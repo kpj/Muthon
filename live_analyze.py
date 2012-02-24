@@ -51,7 +51,7 @@ class analyzer(object):
 		pygame.mixer.music.play()
 
 		self.create_window()
-		self.obj_num = random.randint(40,60)
+		self.obj_num = random.randint(50,70)
 
 		self.gen_window_vars()
 
@@ -85,10 +85,32 @@ class analyzer(object):
 			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
 			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
 			self.diff_size.append(random.randint(1,9))
-			self.obj_type.append("circle_filled")
+			self.obj_type.append(self.get_type(i))
 
 		self.sizer = 1
 		self.counter = 0
+
+	def get_type(self, i):
+		"""
+				circle_filled/lined
+				rect_filled/lined
+				tri_lined
+		"""
+		n = random.randint(0, 100)
+		if n < 50:
+			# filled
+			if n < 25:
+				return "circle_filled"
+			else:
+				return "rect_filled"
+		else:
+			# lined
+			if n < 66:
+				return "circle_lined"
+			elif n < 82:
+				return "rect_lined"
+			else:
+				return "tri_lined"
 
 	def create_window(self):
 		self.screen_bound = (1440, 900)
@@ -152,12 +174,20 @@ class analyzer(object):
 			self.mixer[i][2] += random.randint(-bounds,bounds+3)
 
 	def draw_figure(self, x, y, size, col, art):
-		if art == "circle_filled":
-			pygame.draw.circle(self.screen, col, (x,y), size)
-		elif art == "star_filled":
-			pygame.draw.polygon(self.screen, col, [(x, y - size), (x + size/4, y - size/2), (x + size/3, y - size/2), (x + size/2, y), (x + size/3, y + size/2), (x + size/4, y +size/2), (x, y + size)])
-		elif art == "ellipse_filled":
-			pygame.draw.ellipse(self.screen, col, pygame.Rect((x,y),(x+size/4,y+size/8)))
-
+		try:
+			if art == "circle_filled":
+				pygame.draw.circle(self.screen, col, (x,y), size)
+			elif art == "rect_filled":
+				pygame.draw.rect(self.screen, col, pygame.Rect((x-size/2, y-size/2), (size, size)))
+			elif art == "circle_lined":
+				pygame.draw.circle(self.screen, col, (x,y), size, 1)
+			elif art == "rect_lined":
+				pygame.draw.rect(self.screen, col, pygame.Rect((x-size/2, y-size/2), (size, size)), 1)
+			elif art == "tri_lined":
+				pygame.draw.lines(self.screen, col, True, [(x-size/2, y+size/2), (x+size/2, y+size/2), (x, y-size/2)])
+			elif art == "ellipse_filled":
+				pygame.draw.ellipse(self.screen, col, pygame.Rect((x,y),(x+size/4,y+size/8)))
+		except ValueError:
+			pass
 
 analyzer().live_proc()
