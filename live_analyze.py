@@ -13,6 +13,8 @@ class analyzer(object):
 		pygame.init()
 
 		self.f = tkFileDialog.askopenfilename(initialdir="/home/kpj/Musik")
+		if self.f == "":
+			sys.exit()
 		self.path = u"/".join(self.f.split(u"/")[:-1])
 		self.name = self.f.split(u"/")[-1]
 		
@@ -49,7 +51,7 @@ class analyzer(object):
 		pygame.mixer.music.play()
 
 		self.create_window()
-		self.circle_num = random.randint(40,60)
+		self.obj_num = random.randint(40,60)
 
 		self.gen_window_vars()
 
@@ -77,11 +79,13 @@ class analyzer(object):
 		self.coords = []
 		self.velo = []
 		self.diff_size = []
-		for i in range(self.circle_num):
+		self.obj_type = []
+		for i in range(self.obj_num):
 			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
 			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
 			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
 			self.diff_size.append(random.randint(1,9))
+			self.obj_type.append("circle_filled")
 
 		self.sizer = 1
 		self.counter = 0
@@ -112,8 +116,8 @@ class analyzer(object):
 		self.screen.fill((0,0,0,0))
 
 		# DRAW
-		for i in range(self.circle_num):
-			self.draw_figure(self.coords[i][0], self.coords[i][1], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), "circle_filled")
+		for i in range(self.obj_num):
+			self.draw_figure(self.coords[i][0], self.coords[i][1], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), self.obj_type[i])
 		# DRAW
 
 		pygame.display.update()
@@ -128,7 +132,7 @@ class analyzer(object):
 		pygame.mixer.music.stop()
 
 	def check_borders(self):
-		for i in range(self.circle_num):
+		for i in range(self.obj_num):
 			if self.coords[i][0] < 0:
 				self.coords[i] = (self.screen_bound[0], self.coords[i][1])
 			if self.coords[i][1] < 0:
@@ -140,7 +144,7 @@ class analyzer(object):
 
 	def calc_window(self):
 		bounds = 1
-		for i in range(self.circle_num):
+		for i in range(self.obj_num):
 			self.coords[i] = (self.coords[i][0] + self.velo[i][0], self.coords[i][1] + self.velo[i][1])
 
 			self.mixer[i][0] += random.randint(-bounds,bounds+3)
