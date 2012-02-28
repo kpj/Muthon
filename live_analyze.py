@@ -6,13 +6,18 @@ from scipy.io.wavfile import read
 import time, wave, pymedia.audio.sound as sound
 import pygame.mixer
 
-import os, sys, random, pickle
+from scipy.fftpack import rfft
+import numpy.fft
+
+import os, sys, random, math
 
 class analyzer(object):
 	def __init__(self):
 		pygame.init()
-
-		self.f = tkFileDialog.askopenfilename(initialdir="/home/kpj/Musik")
+		if len(sys.argv) != 2:
+			self.f = tkFileDialog.askopenfilename(initialdir="/home/kpj/Musik")
+		else:
+			self.f = sys.argv[1]
 		if self.f == "":
 			sys.exit()
 		self.path = u"/".join(self.f.split(u"/")[:-1])
@@ -20,10 +25,8 @@ class analyzer(object):
 		
 		self.f = self.check_wav(self.f)
 
-		self.sample_rate, inp = read(self.f)
-		self.audio = inp
+		self.sample_rate, self.audio = read(self.f)
 		self.l = len(self.audio)
-		self.ls = self.l / 10
 
 	def start_msg(self):
 		print 'Parsing: "%s"' % self.name
@@ -37,7 +40,7 @@ class analyzer(object):
 			print "No wav-file"
 			print 'Converting "%s" in "%s"' % (self.name, self.path)
 			#os.system('mplayer   -quiet   -vo null   -vc dummy   -ao pcm:waveheader:file="%s" "%s" 1>&2> /dev/null' % (output, fi))
-			os.system('ffmpeg -i "%s" "%s"' % (fi.encode("utf-8"), output.encode("utf-8")))
+			os.system('ffmpeg -loglevel error -y -i "%s" "%s"' % (fi.encode("utf-8"), output.encode("utf-8")))
 			return output
 		return fi
 	
@@ -51,7 +54,8 @@ class analyzer(object):
 		pygame.mixer.music.play()
 
 		self.create_window()
-		self.obj_num = random.randint(50,70)
+		self.obj_num = random.randint(50,60)
+		self.fourier_num = 2
 
 		self.gen_window_vars()
 
@@ -63,16 +67,23 @@ class analyzer(object):
 
 			time.sleep(0.01)
 
+	def get_fourier(self, s):
+		return abs(numpy.fft.fft(self.audio[s], self.fourier_num))
+
 	def get_average(self, pos):
 		cur_sample = int(pos * self.sample_rate / 1000)
-		al = 0
-		r = range(-int(self.sample_rate / 1000) + cur_sample, cur_sample)
-		for p in r:
-			try:
-				al += self.audio[p][0]
-			except IndexError:
-				pass
-		return float(al) / len(r)
+		al = self.get_fourier(cur_sample)
+		print "Sample: ", abs(self.audio[cur_sample]), "|", cur_sample
+		print "Fourier: ", al
+		return al
+#		al = 0
+#		r = range(-int(self.sample_rate / 1000) + cur_sample, cur_sample)
+#		for p in r:
+#			try:
+#				al += self.audio[p][0]
+#			except IndexError:
+#				pass
+#		return float(al) / len(r)
 
 	def gen_window_vars(self):
 		self.mixer = []
@@ -80,14 +91,18 @@ class analyzer(object):
 		self.velo = []
 		self.diff_size = []
 		self.obj_type = []
+		self.fourier_type = []
 		for i in range(self.obj_num):
 			self.mixer.append([random.randint(0,1000), random.randint(0,1000), random.randint(0,1000)])
 			self.coords.append((random.randint(0,self.screen_bound[0]), random.randint(0,self.screen_bound[1])))
 			self.velo.append((random.randint(-3,3), random.randint(-3,3)))
-			self.diff_size.append(random.randint(1,9))
+			self.diff_size.append(random.randint(4,9))
 			self.obj_type.append(self.get_type(i))
+			self.fourier_type.append(random.randint(0, self.fourier_num-1))
 
-		self.sizer = 1
+		self.sizer = []
+		for lol in range(self.fourier_num):
+			self.sizer.append(1)
 		self.counter = 0
 
 	def get_type(self, i):
@@ -120,8 +135,9 @@ class analyzer(object):
 		pygame.mixer.music.set_volume(0.5)
 
 	def draw_window(self, cur):
-		self.sizer += abs(cur) * 0.9999**(self.sizer)
-		self.sizer *= 0.8
+		for e in range(len(self.sizer)):
+			self.sizer[e] += abs(cur[e]) * 0.9999**(self.sizer[e])
+			self.sizer[e] *= 0.8
 		if self.sizer <= 0: self.sizer = 0
 
 		for event in pygame.event.get():
@@ -139,7 +155,18 @@ class analyzer(object):
 
 		# DRAW
 		for i in range(self.obj_num):
-			self.draw_figure(self.coords[i][0], self.coords[i][1], int(self.sizer / 100) / self.diff_size[i], (self.mixer[i][0] % 255, self.mixer[i][1] % 255, self.mixer[i][2] % 255, 0), self.obj_type[i])
+			self.draw_figure(
+				self.coords[i][0], 
+				self.coords[i][1], 
+				int(self.sizer[self.fourier_type[i]] / 100) / self.diff_size[i],
+				(
+					self.mixer[i][0] % 255, 
+					self.mixer[i][1] % 255, 
+					self.mixer[i][2] % 255, 
+					0
+				),
+				 self.obj_type[i]
+			)
 		# DRAW
 
 		pygame.display.update()
